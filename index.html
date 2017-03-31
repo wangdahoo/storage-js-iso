@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title></title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+  <p>Test Storage</p>
+
+  <p id="result"></p>
+
+  <script src="dist/storage.min.js"></script>
+
+  <script>
+    var result = document.getElementById('result')
+
+    $storage.on('time', function (e) {
+      console.log('time changed', e)
+      result.innerHTML += e + '<br>'
+    })
+
+    setInterval(function () {
+      $storage.set('time', (new Date()).getTime());
+    }, 50)
+  </script>
+</body>
+</html>

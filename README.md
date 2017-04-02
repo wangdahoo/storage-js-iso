@@ -5,7 +5,7 @@ storage.js compatible with isomorphic apps.
 ### How to use
 
 ```html
-<script src="https://unpkg.com/storage-js-iso@0.1.0/dist/storage.min.js"></script>
+<script src="https://unpkg.com/storage-js-iso@0.2.0/dist/storage.min.js"></script>
 ```
 
 ```js

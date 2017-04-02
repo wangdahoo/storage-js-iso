@@ -4,121 +4,122 @@
 	(global.$storage = factory());
 }(this, (function () { 'use strict';
 
-var classCallCheck = function (instance, Constructor) {
-  if (!(instance instanceof Constructor)) {
-    throw new TypeError("Cannot call a class as a function");
-  }
+var ms = {};
+
+var getItem = function getItem(key) {
+  return key in ms ? ms[key] : null;
 };
 
-var createClass = function () {
-  function defineProperties(target, props) {
-    for (var i = 0; i < props.length; i++) {
-      var descriptor = props[i];
-      descriptor.enumerable = descriptor.enumerable || false;
-      descriptor.configurable = true;
-      if ("value" in descriptor) descriptor.writable = true;
-      Object.defineProperty(target, descriptor.key, descriptor);
+var setItem = function setItem(key, value) {
+  ms[key] = value;
+  return true;
+};
+
+var removeItem = function removeItem(key) {
+  return key in ms ? delete ms[key] : false;
+};
+
+var clear = function clear() {
+  ms = {};
+  return true;
+};
+
+var Stub = {
+  getItem: getItem,
+  setItem: setItem,
+  removeItem: removeItem,
+  clear: clear
+};
+
+var STORAGE_EVENT_TYPE = 'storage';
+var SEPERATOR = '::';
+
+var slicedToArray = function () {
+  function sliceIterator(arr, i) {
+    var _arr = [];
+    var _n = true;
+    var _d = false;
+    var _e = undefined;
+
+    try {
+      for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
+        _arr.push(_s.value);
+
+        if (i && _arr.length === i) break;
+      }
+    } catch (err) {
+      _d = true;
+      _e = err;
+    } finally {
+      try {
+        if (!_n && _i["return"]) _i["return"]();
+      } finally {
+        if (_d) throw _e;
+      }
     }
+
+    return _arr;
   }
 
-  return function (Constructor, protoProps, staticProps) {
-    if (protoProps) defineProperties(Constructor.prototype, protoProps);
-    if (staticProps) defineProperties(Constructor, staticProps);
-    return Constructor;
+  return function (arr, i) {
+    if (Array.isArray(arr)) {
+      return arr;
+    } else if (Symbol.iterator in Object(arr)) {
+      return sliceIterator(arr, i);
+    } else {
+      throw new TypeError("Invalid attempt to destructure non-iterable instance");
+    }
   };
 }();
 
-var Stub = function () {
-  function Stub() {
-    classCallCheck(this, Stub);
-
-    this.ms = {};
-  }
-
-  createClass(Stub, [{
-    key: "getItem",
-    value: function getItem(key) {
-      return key in this.ms ? this.ms[key] : null;
-    }
-  }, {
-    key: "setItem",
-    value: function setItem(key, value) {
-      this.ms[key] = value;
-      return true;
-    }
-  }, {
-    key: "removeItem",
-    value: function removeItem(key) {
-      return key in ms ? delete ms[key] : false;
-    }
-  }, {
-    key: "clear",
-    value: function clear() {
-      this.ms = {};
-      return true;
-    }
-  }]);
-  return Stub;
-}();
-
 var listeners = {};
-var listening = false;
-var global$2 = window;
 
-function listen() {
-  if (global$2.addEventListener) {
-    global$2.addEventListener('storage', change, false);
-  } else if (global$2.attachEvent) {
-    global$2.attachEvent('onstorage', change);
-  } else {
-    global$2.onstorage = change;
-  }
-}
+var Event = {
+  addEvent: function addEvent(type, fn) {
+    if (typeof listeners[type] === 'undefined') {
+      listeners[type] = [];
+    }
+    if (typeof fn === 'function') {
+      listeners[type].push(fn);
+    }
+    return this;
+  },
+  fireEvent: function fireEvent(type, value) {
+    var arrayEvent = listeners[type];
+    if (arrayEvent instanceof Array) {
+      for (var i = 0; i < arrayEvent.length; i++) {
+        if (typeof arrayEvent[i] === 'function') {
+          var _type$split = type.split(SEPERATOR),
+              _type$split2 = slicedToArray(_type$split, 2),
+              eventType = _type$split2[0],
+              key = _type$split2[1];
 
-function change(e) {
-  if (!e) {
-    e = global$2.event;
-  }
-  this.all = listeners[e.key];
-  if (all) {
-    all.forEach(fire);
-  }
-
-  function fire(listener) {
-    listener(JSON.parse(e.newValue), JSON.parse(e.oldValue), e.url || e.uri);
-  }
-}
-
-var Tracking = function () {
-  function Tracking() {
-    classCallCheck(this, Tracking);
-  }
-
-  createClass(Tracking, [{
-    key: 'on',
-    value: function on(key, fn) {
-      if (listeners[key]) {
-        listeners[key].push(fn);
-      } else {
-        listeners[key] = [fn];
-      }
-      if (listening === false) {
-        listen();
+          var event = { type: eventType, key: key, value: value };
+          arrayEvent[i](event);
+        }
       }
     }
-  }, {
-    key: 'off',
-    value: function off(key, fn) {
-      this.ns = listeners[key];
-      if (ns.length > 1) {
-        ns.splice(ns.indexOf(fn), 1);
+    return this;
+  },
+  removeEvent: function removeEvent(type, fn) {
+    var arrayEvent = listeners[type];
+    if (typeof type === 'string' && arrayEvent instanceof Array) {
+      if (typeof fn === 'function') {
+        // 清除当前 type 类型事件下对应 fn 方法
+        for (var i = 0; i < arrayEvent.length; i++) {
+          if (arrayEvent[i] === fn) {
+            listeners[type].splice(i, 1);
+            break;
+          }
+        }
       } else {
-        listeners[key] = [];
+        // 清除所有type类型事件
+        delete listeners[type];
       }
     }
-  }]);
-  return Tracking;
-}();
+    return this;
+  }
+};
 
 var global$1 = window;
 
@@ -142,63 +143,49 @@ var isStorageSupported = function isStorageSupported(localStorage) {
   return supported;
 };
 
-var stub = new Stub();
-var tracking = new Tracking();
-var ls = 'localStorage' in global$1 && global$1.localStorage ? global$1.localStorage : stub;
+var ls = 'localStorage' in global$1 && global$1.localStorage ? global$1.localStorage : Stub;
 
-var Storage = function () {
-  function Storage() {
-    classCallCheck(this, Storage);
+if (!isStorageSupported(ls)) {
+  ls = Stub;
+}
 
-    if (!isStorageSupported(ls)) {
-      ls = stub;
+var initEventName = function initEventName(key) {
+  return '' + STORAGE_EVENT_TYPE + SEPERATOR + key;
+};
+
+var index = {
+  get: function get(key) {
+    try {
+      return JSON.parse(ls.getItem(key));
+    } catch (e) {
+      return ls.getItem(key);
     }
+  },
+  set: function set(key, value) {
+    try {
+      ls.setItem(key, JSON.stringify(value));
+      var eventName = initEventName(key);
+      Event.fireEvent(eventName, this.get(key));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+  remove: function remove(key) {
+    return ls.removeItem(key);
+  },
+  clear: function clear() {
+    return ls.clear();
+  },
+  on: function on(key, fn) {
+    var eventName = initEventName(key);
+    Event.addEvent(eventName, fn);
+  },
+  off: function off(key, fn) {
+    var eventName = initEventName(key);
+    Event.removeEvent(eventName, fn);
   }
-
-  createClass(Storage, [{
-    key: 'get',
-    value: function get$$1(key) {
-      try {
-        return JSON.parse(ls.getItem(key));
-      } catch (e) {
-        return ls.getItem(key);
-      }
-    }
-  }, {
-    key: 'set',
-    value: function set$$1(key, value) {
-      try {
-        ls.setItem(key, JSON.stringify(value));
-        return true;
-      } catch (e) {
-        return false;
-      }
-    }
-  }, {
-    key: 'remove',
-    value: function remove(key) {
-      return ls.removeItem(key);
-    }
-  }, {
-    key: 'clear',
-    value: function clear() {
-      return ls.clear();
-    }
-  }, {
-    key: 'on',
-    value: function on(key, fn) {
-      tracking.on(key, fn);
-    }
-  }, {
-    key: 'off',
-    value: function off(key, fn) {
-      tracking.on(key, fn);
-    }
-  }]);
-  return Storage;
-}();
-
-var index = new Storage();
+};
 
 return index;
 

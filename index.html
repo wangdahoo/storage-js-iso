@@ -17,8 +17,12 @@
 
     $storage.on('time', function (e) {
       console.log('time changed', e)
-      result.innerHTML += e + '<br>'
+      result.innerHTML = e.key + ': ' + e.value + '<br>'
     })
+
+    setTimeout(function () {
+      $storage.off('time');
+    }, 5000)
 
     setInterval(function () {
       $storage.set('time', (new Date()).getTime());

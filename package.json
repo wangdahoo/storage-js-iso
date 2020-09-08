@@ -1,6 +1,6 @@
 {
   "name": "storage-js-iso",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "storage.js compatible with isomorphic apps.",
   "main": "dist/storage.min.js",
   "scripts": {

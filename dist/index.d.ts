@@ -1,5 +1,5 @@
 export default class Storage {
-    static get (key: string): void
+    static get (key: string): any
     static set (key: string, value: any): boolean
     static remove (key: string): void
     static clear (): void
